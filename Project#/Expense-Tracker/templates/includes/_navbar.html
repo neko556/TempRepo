@@ -1,0 +1,84 @@
+<nav class="navbar navbar-expand-lg navbar-dark transparent-navbar">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="/">
+            <img src="../static/money-icon.png" alt="Money Icon" style="width: 30px; height: 30px; margin-right: 8px;" />
+            <h2 class="green-text mb-0" style="color: #00b894; font-size: 1.5rem;">Expen<span class="text-light">zo</span></h2>
+        </a>
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-toggle="collapse"
+            data-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/"><h5 class="text-light mb-0">Home</h5></a>
+                </li>
+                {% if session.logged_in %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/addTransactions"><h5 class="text-light mb-0">Add Transactions</h5></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/transactionHistory"><h5 class="text-light mb-0">Transaction History</h5></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard"><h5 class="text-light mb-0">Dashboard</h5></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/track_budget"><h5 class="text-light mb-0">Track Budget</h5></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout"><h5 class="text-light mb-0">Logout</h5></a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/signup"><h5 class="text-light mb-0">Sign Up</h5></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/login"><h5 class="text-light mb-0">Login</h5></a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<style>
+    /* Make the navbar transparent */
+    .transparent-navbar {
+        background: transparent !important; /* Overrides the gradient */
+        position: absolute;
+        top: 0;
+        width: 100%;
+        z-index: 2; /* Ensures it sits above the video */
+    }
+
+    .navbar-nav .nav-link {
+        transition: color 0.3s ease;
+    }
+
+    .navbar-nav .nav-link:hover {
+        color: #00b894; /* Bright color on hover */
+    }
+
+    .green-text {
+        font-family: 'Roboto', sans-serif;
+        font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+        .navbar-brand h2 {
+            font-size: 1.25rem; /* Adjust brand size for mobile */
+        }
+        
+        .navbar-nav .nav-link h5 {
+            font-size: 0.9rem; /* Adjust link size for mobile */
+        }
+    }
+</style>

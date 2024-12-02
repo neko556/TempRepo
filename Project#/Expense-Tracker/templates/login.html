@@ -1,0 +1,108 @@
+{% extends 'layout.html' %}
+{% block body %}
+{% include 'includes/_messages.html' %}
+<style>
+  .body {
+      position: relative; /* Makes sure absolute elements are positioned relative to the body */
+  }
+
+  .video-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1; /* Places the video behind the content */
+  }
+
+  .login {
+  position: absolute;
+  margin-top:25%;
+  top: 40%; /* Vertically center */
+  right: 5%; /* Move it closer to the extreme right */
+  transform: translateY(-50%); /* Center it vertically */
+  width: 22%; /* Adjust width as necessary */
+  color: white; /* Text color */
+  background: rgba(0, 0, 0, 0.7); /* Semi-transparent background for visibility */
+  padding: 15px;
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  z-index: 1; /* Ensure it is above any background elements */
+}
+
+/* Adjust input and button styling for better appearance */
+.form-group input {
+  padding: 5px;
+  font-size: 14px;
+   /* Add spacing between fields */
+}
+
+.btn {
+  padding: 10px 15px;
+  font-size: 16px;
+  background-color: #17a2b8; /* Bootstrap's 'info' color */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #138496; /* Slightly darker shade on hover */
+}
+
+a {
+  color: #17a2b8; /* Match link color with button color */
+}
+
+a:hover {
+  color: #138496; /* Slightly darker shade on hover */
+}
+
+
+  @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+  }
+
+  
+  .forgot {
+      margin-top: 10px; /* Space above the forgot password link */
+  }
+
+  .navigation {
+      text-align: center; /* Center the navigation buttons */
+      margin-top: 10px; /* Space above the navigation */
+  }
+
+  .navbar {
+      position: relative; /* Ensure navbar elements stack on top of the page */
+      z-index: 2; /* Keep navbar above other content */
+      height: 60px; /* Adjust this height based on your navbar design */
+  }
+</style>
+
+<video class="video-background" autoplay loop muted>
+  <source src="{{ url_for('static', filename='vid.mp4') }}" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+<div class="login container text-white">
+    {% from "includes/_formhelpers.html" import render_field %}
+    <h2 class="text-center mb-4">Login to Your Account</h2>
+    <form action="" method="post" class="bg-dark p-4 rounded shadow">
+        <div class="form-group">
+            {{ render_field(form.username, class_="form-control form-control-lg", placeholder="Username") }}
+        </div>
+        <div class="form-group">
+            {{ render_field(form.password, class_="form-control form-control-lg", placeholder="Password") }}
+        </div>
+        <div class="navigation">
+            <input class="btn btn-info btn-block" type="submit" value="Login" />
+        </div>
+    </form>
+    <p class="text-center mt-3">Don't have an account? <a class="hover" href="/signup">Sign Up</a></p>
+</div>
+
+{% endblock %}

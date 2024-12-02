@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="../static/money-icon.png" type="image/x-icon" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous" />
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous" />
+    <title>{% block title %}Expense Tracker{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/style.css') }}" />
+
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='finance-background.jpg') }}");
+            background-color: #121212;
+            color: #f8f9fa;
+            transition: background-color 0.5s ease;
+            padding-top: 20px;
+            height: 100vh;
+        }
+
+        .navbar {
+            padding: 0.5rem 1rem;
+            background-color: #222;
+        }
+
+        .container {
+            animation: fadeIn 0.8s ease-in-out;
+            background-color: #1e1e1e;
+            padding-top: 50px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Floating chatbot icon */
+        #chatbot-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #1e1e1e;
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        /* Chatbot window */
+        #chatbot-window {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            display: none;
+        }
+
+        #chatbot-header {
+            background: #121212;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        #chatbot-messages {
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 14px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #chatbot-input {
+            width: calc(100% - 80px);
+            padding: 10px;
+            border: none;
+            border-top: 1px solid #ddd;
+        }
+
+        #chatbot-send {
+            width: 60px;
+            border: none;
+            background: #1e1e1e;
+            color: white;
+            cursor: pointer;
+        }
+
+        #chatbot-send:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'includes/_navbar.html' %}
+
+    <div class="container">
+        {% include 'includes/_messages.html' %}
+        {% block body %}{% endblock %}
+    </div>
+
+    <!-- Floating Chatbot -->
+    <div id="chatbot-icon" onclick="toggleChatbot()">💬</div>
+
+    <div id="chatbot-window">
+        <div id="chatbot-header">
+            <span>Chatbot</span>
+            <button onclick="toggleChatbot()">×</button>
+        </div>
+        <div id="chatbot-messages"></div>
+        <input id="chatbot-input" type="text" placeholder="Type your message..." />
+        <button id="chatbot-send" onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        function toggleChatbot() {
+            const chatbotWindow = document.getElementById('chatbot-window');
+            chatbotWindow.style.display = chatbotWindow.style.display === 'none' || chatbotWindow.style.display === '' ? 'block' : 'none';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatbot-input');
+            const messages = document.getElementById('chatbot-messages');
+            const userMessage = input.value;
+
+            messages.innerHTML += `<p><b>You:</b> ${userMessage}</p>`;
+            input.value = '';
+
+            const response = await fetch('/chatbot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: 1, message: userMessage })
+            });
+
+            const data = await response.json();
+
+            messages.innerHTML += `<p><b>Bot:</b> ${data.response}</p>`;
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>

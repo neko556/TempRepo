@@ -1,0 +1,306 @@
+{% extends 'layoutin.html' %}
+{% block body %}
+<div class="container mt-4">
+    <h2 class="text-light mb-4">Track Your Budget</h2>
+
+    <!-- Overall Budget Card -->
+    <div class="card bg-dark text-light border-secondary mb-4">
+        <div class="card-body">
+            <div class="current-budget">
+                <h3 class="mb-4">Overall Budget Settings</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-secondary mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Monthly Budget</h5>
+                                <p class="card-text display-4">₹{{ budget_data['monthly_budget'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-secondary mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Monthly Savings Goal</h5>
+                                <p class="card-text display-4">₹{{ budget_data['monthly_savings_goal'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <form method="POST" action="{{ url_for('track_budget') }}" class="mt-4">
+                    <h4>Update Overall Budget</h4>
+                    <div class="form-group">
+                        <label for="monthly_budget">Monthly Budget</label>
+                        <input type="number" class="form-control bg-dark text-light" id="monthly_budget" name="monthly_budget" value="{{ budget_data['monthly_budget'] }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="monthly_savings_goal">Monthly Savings Goal</label>
+                        <input type="number" class="form-control bg-dark text-light" id="monthly_savings_goal" name="monthly_savings_goal" value="{{ budget_data['monthly_savings_goal'] }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control bg-dark text-light" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Budget</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar for Overall Budget -->
+    <div class="mb-4">
+        <h3 class="mb-4">Overall Spending Progress</h3>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h5>Total Spent: <span class="text-success">₹{{ total_spent }}</span></h5>
+            </div>
+            <div class="col-md-6 text-right">
+                <h5>Remaining: <span class="text-danger">₹{{ remaining_budget }}</span></h5>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress">
+                <div class="progress-bar 
+                    {% if progress_percentage <= 65 %}bg-success 
+                    {% elif progress_percentage <= 85 %}bg-warning 
+                    {% else %}bg-danger 
+                    {% endif %}" 
+                    role="progressbar" 
+                    style="width: {{ progress_percentage }}%;" 
+                    aria-valuenow="{{ progress_percentage }}" 
+                    aria-valuemin="0" 
+                    aria-valuemax="100">
+                    <span class="progress-text">{{ total_spent }} spent out of ₹{{ budget_data['monthly_budget'] }} (Remaining: ₹{{ remaining_budget }})</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span style="color: green;">●</span> Goals Met: {{ goals_data.goals_met }} 
+            <span style="color: red;">●</span> Goals Missed: {{ goals_data.goals_missed }}
+        </div>
+        <div style="text-align: right;">
+            <span style="color: green;">●</span> Monthly Goals Met: {{ monthly_goals_data.monthly_goals_met }} 
+            <span style="color: red;">●</span> Monthly Goals Missed: {{ monthly_goals_data.monthly_goals_missed }}
+        </div>
+    </div> 
+    
+    <!-- Tabs for Graphs -->
+    <div class="tabs d-flex justify-content-center">
+        <div class="tab active" onclick="showTab('goals')">Goals Tracking</div>
+        <div class="tab" onclick="showTab('monthly-goals')">Monthly Goals Tracking</div>
+    </div>
+
+    <div id="goals" class="tab-content active">
+        <canvas id="goalsChart"></canvas>
+        </div>
+    <div  id="monthly-goals" class="tab-content" style="display: none;">
+        <canvas id="monthlyGoalsChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('goalsChart').getContext('2d');
+        const goalsMet = {{ goals_data.goals_met }};
+        const goalsMissed = {{ goals_data.goals_missed }};
+        
+        const goalsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Goals Met', 'Goals Missed'],
+                datasets: [{
+                    label: 'Goals Tracking',
+                    data: [goalsMet, goalsMissed],
+                    backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                    borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Monthly Goals Chart
+        const monthlyCtx = document.getElementById('monthlyGoalsChart').getContext('2d');
+        const monthlyGoalsMet = {{ monthly_goals_data.monthly_goals_met }};
+        const monthlyGoalsMissed = {{ monthly_goals_data.monthly_goals_missed }};
+        
+        const monthlyGoalsChart = new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+    labels: ['Monthly Goals Met', 'Monthly Goals Missed'],
+    datasets: [{
+        label: 'Monthly Goals Tracking',
+        data: [monthlyGoalsMet, monthlyGoalsMissed],
+        backgroundColor: ['rgba(50, 205, 50, 0.2)', 'rgba(255, 69, 0, 0.2)'], // Light green for success, light red for missed
+        borderColor: ['rgba(50, 205, 50, 1)', 'rgba(255, 69, 0, 1)'],         // Solid green for success, solid red for missed
+        borderWidth: 1
+    }]
+}
+
+            ,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.style.display = 'none';
+            });
+            document.getElementById(tabName).style.display = 'block';
+
+            const tabLinks = document.querySelectorAll('.tab');
+            tabLinks.forEach(tabLink => {
+                tabLink.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+    </script>
+
+   
+   
+        <style>
+    .tabs {
+        display: flex;
+        justify-content: flex-start; /* Align tabs to the left */
+        gap: 5px; /* Space between tabs */
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        background-color: #343a40;
+        color: #fff;
+        border: 1px solid #6c757d;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .tab:hover {
+        background-color: #495057;
+        transform: translateY(-2px);
+    }
+
+    .tab.active {
+        background-color: #007bff;
+        border-color: #007bff;
+        font-weight: bold;
+    }
+</style>
+
+
+
+  
+    <!-- Category Budgets Card -->
+    <div class="card bg-dark text-light border-secondary">
+        <div class="card-body">
+            <h3 class="mb-4">Category Budget Limits</h3>
+
+            <!-- Add New Category Budget -->
+            <form method="POST" action="{{ url_for('set_category_budget') }}" class="mb-4">
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select class="form-control bg-dark text-light" id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                    <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group">
+                            <label for="budget_limit">Budget Limit</label>
+                            <input type="number" class="form-control bg-dark text-light" id="budget_limit" name="budget_limit" required>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary mt-4">Set Limit</button>
+                    </div>
+                </div>
+            </form>
+            
+
+            <!-- Display Category Budgets -->
+            {% if category_budgets %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Budget Limit</th>
+                            <th>Current Spending</th>
+                            <th>Remaining</th>
+                            <th>Progress</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for budget in category_budgets %}
+ <tr>
+                                <td>{{ budget.category }}</td>
+                                <td>₹{{ budget.budget_limit }}</td>
+                                <td>₹{{ budget.current_spending }}</td>
+                                <td>
+                                    <span class="badge {% if remaining_budget < 0 %}badge-danger{% elif remaining_budget < float(budget.budget_limit) * 0.2 %}badge-warning{% else %}badge-success{% endif %}">
+                                        ₹{{ budget.remaining }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="progress">
+                                        {% set percentage = 0 %}
+                                        {% if budget.budget_limit > 0 %}
+                                            {% set percentage = (budget.current_spending / budget.budget_limit) * 100 %}
+                                        {% endif %}
+                                        <div class="progress-bar 
+                                            {% if percentage <= 65 %}bg-success 
+                                            {% elif percentage <= 85 %}bg-warning 
+                                            {% else %}bg-danger 
+                                            {% endif %}" 
+                                            role="progressbar" 
+                                            style="width: {{ percentage }}%;" 
+                                            aria-valuenow="{{ percentage }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                            {{ percentage | round(1) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('delete_category_budget', category=budget.category) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this category budget?')">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No category budgets set yet. Add your first category budget above.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

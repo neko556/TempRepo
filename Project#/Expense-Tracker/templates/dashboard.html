@@ -1,0 +1,292 @@
+{% extends 'layoutin.html' %}
+{% block body %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #121212; /* Dark background */
+            color: #ffffff; /* Light text color */
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #1e1e1e; /* Darker card background */
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .chart {
+            margin-bottom: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #444;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 5px 5px 0 0;
+            background-color: #333; /* Dark tab background */
+            transition: background-color 0.3s;
+            color: #ffffff; /* Tab text color */
+        }
+
+        .tab:hover {
+            background-color: #444; /* Lighter on hover */
+        }
+
+        .tab.active {
+            background-color: #1e1e1e; /* Active tab background */
+            border-color: #444;
+            border-bottom: none;
+        }
+
+        .heatmap-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+
+        .heatmap-header {
+            display: grid;
+            grid-template-columns: 30px repeat(7, 20px);
+            gap: 2px;
+            margin-bottom: 5px;
+        }
+
+        .heatmap-header div {
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ffffff; /* Light color for headers */
+        }
+
+        .heatmap {
+            display: grid;
+            grid-template-columns: 30px repeat(7, 20px);
+            gap: 2px;
+        }
+
+        .heatmap div {
+            width: 20px;
+            height: 20px;
+            background-color: #2e7d32; /* Default medium green */
+            border: 1px solid #444;
+            transition: background-color 0.3s;
+        }
+
+        .heatmap .week-label {
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ffffff; /* Light color for week labels */
+        }
+
+        .heatmap .low {
+            background-color: #a5d6a7; /* Light green */
+        }
+
+        .heatmap .medium {
+            background-color: #66bb6a; /* Medium green */
+        }
+
+        .heatmap .high {
+            background-color: #388e3c; /* Dark green */
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+            display: none;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+
+    <div class="dashboard">
+        <h1>Financial Dashboard</h1>
+
+        <div id="financial-summary">
+            <h2>Financial Summary</h2>
+            <p>Total Spending: ₹{{ '%.2f'|format(financial_summary.total_spending|float) }}</p>
+        </div>
+
+        <!-- Tabs for switching between charts -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('daily')">Daily Spending</div>
+            <div class="tab" onclick="showTab('category')">Category-wise Spending</div>
+            <div class="tab" onclick="showTab('heatmap')">Spending Heat Map</div>
+        </div>
+
+        <div id="daily-spending" class="chart">
+            <h2>Daily Spending (Last 30 Days)</h2>
+            <canvas id="daily-spending-chart"></canvas>
+        </div>
+
+        <div id="category-spending" class="chart" style="display: none ;">
+            <h2>Category-wise Spending</h2>
+            <canvas id="category-spending-chart"></canvas>
+        </div>
+
+        <div id="spending-heatmap" class="chart" style="display:none;">
+            <h2>Spending Heat Map (Last 30 Days)</h2>
+            <div class="heatmap-container">
+                <div class="heatmap-header">
+                    <div></div>
+                    <div>1</div>
+                    <div>2</div>
+                    <div>3</div>
+                    <div>4</div>
+                    <div>5</div>
+                    <div>6</div>
+                    <div>7</div>
+                </div>
+                <div class="heatmap" id="heatmap-grid">
+                    <!-- Dynamic heatmap content -->
+                </div>
+            </div>
+        </div>
+
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Function to show the selected tab
+        function showTab(tab) {
+            document.getElementById('daily-spending').style.display = tab === 'daily' ? 'block' : 'none';
+            document.getElementById('category-spending').style.display = tab === 'category' ? 'block' : 'none';
+            document.getElementById('spending-heatmap').style.display = tab === 'heatmap' ? 'block' : 'none';
+
+            // Update active tab styling
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[onclick="showTab('${tab}')"]`).classList.add('active');
+        }
+
+        // Generate heatmap dynamically
+        const spendingData = {{ daily_spending|tojson }};
+        const heatmap = document.getElementById('heatmap-grid');
+
+        const spendingMap = {};
+        spendingData.forEach(item => {
+            spendingMap[item.date] = parseFloat(item.amount);
+        });
+
+        for (let week = 1; week <= 4; week++) {
+            const weekLabel = document.createElement('div');
+            weekLabel.className = 'week-label';
+            weekLabel.textContent = `W${week}`;
+            heatmap.appendChild(weekLabel);
+
+            for (let day = 1; day <= 7; day++) {
+                const date = new Date();
+                date.setDate(date.getDate() - (date.getDay() + (day - 1)) + ((week - 1) * 7));
+                const formattedDate = date.toISOString().split('T')[0];
+
+                const square = document.createElement('div');
+                const amount = spendingMap[formattedDate] || 0;
+
+                if (amount < 100) {
+                    square.className = 'low';
+                } else if (amount < 500) {
+                    square.className = 'medium';
+                } else {
+                    square.className = 'high';
+                }
+
+                // Tooltip functionality
+                square.addEventListener('mouseover', function(event) {
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = `${event.pageX + 10}px`;
+                    tooltip.style.top = `${event.pageY + 10}px`;
+                    tooltip.textContent = `₹${amount} on ${formattedDate}`;
+                });
+
+                square.addEventListener('mouseout', function() {
+                    document.getElementById('tooltip').style.display = 'none';
+                });
+
+                heatmap.appendChild(square);
+            }
+        }
+
+        // Daily Spending Chart
+        const dailySpendingCtx = document.getElementById('daily-spending-chart').getContext('2d');
+        new Chart(dailySpendingCtx, {
+            type: 'line',
+            data: {
+                labels: spendingData.map(item => item.date),
+                datasets: [{
+                    label: 'Daily Spending',
+                    data: spendingData.map(item => item.amount),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        ticks: {
+                            callback: function (value, index) {
+                                const date = new Date(value);
+                                return `${date.getDate()}/${date.getMonth() + 1}`;
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Category Spending Chart
+        const categorySpendingData = {{ category_spending|tojson }};
+        const categorySpendingCtx = document.getElementById('category-spending-chart').getContext('2d');
+        new Chart(categorySpendingCtx, {
+            type: 'pie',
+            data: {
+                labels: categorySpendingData.map(item => item.category),
+                datasets: [{
+                    data: categorySpendingData.map(item => item.amount),
+                    backgroundColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(54, 162, 235)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)',
+                        'rgb(153, 102, 255)',
+                        'rgb(255, 159, 64)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Category-wise Spending'
+                    }
+                }
+            }
+        });
+
+        // Initialize the first tab
+        showTab('daily');
+    </script>
+{% endblock %}
