@@ -13,6 +13,7 @@ import tabula
 import pandas as pd
 from datetime import datetime as dt
 import logging
+import random
 from decimal import Decimal
 
 
@@ -438,11 +439,11 @@ def chatbot():
     message = request.json.get("message", "").lower()
     logging.debug(f"Received message: {message}")
     response = ""
-
+    l=["show monthly budget","show category budgets","last transaction","most spent category this month","budget alerts","most expensive transaction this month","most expensive transaction this year"]
     try:
         with mysql.connection.cursor() as cursor:
             # Check if the user wants to see their budget
-            if "show monthly  budget" in message :
+            if "show monthly budget" in message :
                 cursor.execute("SELECT monthly_budget, monthly_savings_goal FROM user_budget WHERE user_id = %s", (user_id,))
                 budget = cursor.fetchone()
 
@@ -561,7 +562,8 @@ def chatbot():
                     response = "You have no transactions this year."
                 return jsonify({"response": response})
             # If the user asks something else
-            response = "I'm sorry, I didn't understand that. "
+            n=random.randint(0,len(l))
+            response = "I'm sorry, I didn't understand that. try commands like ",l[n] 
 
     except Exception as e:
         logging.error(f"Error: {e}")
@@ -786,7 +788,7 @@ def track_budget():
 
 # Fetch the results
         category_budgets = cur.fetchall()
-        print(category_budgets)
+        
 
         # Initialize counters for goals met and missed
         goals_met = 0
@@ -812,12 +814,8 @@ def track_budget():
         else:
             monthly_goals_missed += 1
 
-        # Prepare data for monthly goals visualization
-        monthly_goals_data = {
-            'monthly_goals_met': monthly_goals_met,
-            'monthly_goals_missed': monthly_goals_missed
-        }
-         # Prepare data for line graphs
+       
+        
        
 
 # Assuming you have other variables like progress_percentage, remaining_budget, total_spent, and budget_data defined
@@ -828,8 +826,7 @@ def track_budget():
     remaining_budget=remaining_budget,
     total_spent=total_spent,
     budget_data=budget_data,
-    monthly_goals_data=monthly_goals_data,
-   
+    
     
     category_budgets=category_budgets,
     goals_data=goals_data
